@@ -2,7 +2,7 @@
 // simply run: `node seed.js` from the root of this project folder.
 
 var db = require('./models');
-
+console.log(db);
 var books_list = [
   {
     title: "To Kill a Mockingbird",
