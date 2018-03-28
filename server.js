@@ -75,15 +75,13 @@ app.get('/', function (req, res) {
 // get all books
 app.get('/api/books', function (req, res) {
   // send all books as JSON response
-  console.log('books index');
-  // mongoose method
-  db.Book.find({}, function(err, books) {
-    if (err) {
-      console.log(err); 
-    } else {
+  db.Book.find()
+    // populate fills in the author id with all the author data
+    .populate('author')
+    .exec(function(err, books){
+      if (err) { console.log("index error: " + err); }
       res.json(books);
-    }
-  })
+    });
 });
 
 // get one book
@@ -102,29 +100,25 @@ app.get('/api/books/:id', function (req, res) {
 // create new book
 app.post('/api/books', function (req, res) {
   // create new book with form data (`req.body`)
-  console.log('books create', req.body);
-  db.Book.create(req.body, function(err, newBook) {
-    if (err) {
-      console.log(err); 
-    } else {
-      res.json(newBook);
-    }
-  })
-});
+  var newBook = new db.Book({
+    title: req.body.title,
+    image: req.body.image,
+    releaseDate: req.body.releaseDate,
+  });
 
-// update book
-app.put('/api/books/:id', function(req,res){
-// get book id from url params (`req.params`)
-  console.log('books update', req.params);
-  var bookId = req.params.id;
+  // this code will only add an author to a book if the author already exists
+  db.Author.findOne({name: req.body.author}, function(err, author){
+    newBook.author = author;
+    // add newBook to database
+    newBook.save(function(err, book){
+      if (err) {
+        console.log("create error: " + err);
+      }
+      console.log("created ", book.title);
+      res.json(book);
+    });
+  });
 
-  db.Book.findByIdAndUpdate(bookId, req.body, {new: true}, function(err, bookUpdate) {
-    if (err) {
-      console.log(err); 
-    } else {
-      res.json(bookUpdate)
-    }
-  })
 });
 
 // delete book
