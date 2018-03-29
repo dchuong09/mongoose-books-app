@@ -105,21 +105,35 @@ app.post('/api/books', function (req, res) {
     image: req.body.image,
     releaseDate: req.body.releaseDate,
   });
-
-  // this code will only add an author to a book if the author already exists
+  // find the author from req.body
   db.Author.findOne({name: req.body.author}, function(err, author){
-    newBook.author = author;
-    // add newBook to database
-    newBook.save(function(err, book){
-      if (err) {
-        console.log("create error: " + err);
-      }
-      console.log("created ", book.title);
-      res.json(book);
-    });
+    if (err) {
+      return console.log(err);
+    }
+    // if that author doesn't exist yet, create a new one
+    if (author === null) {
+      db.Author.create({name:req.body.author, alive:true}, function(err, newAuthor) {
+        createBookWithAuthorAndRespondTo(newBook, newAuthor, res);
+      });
+    } else {
+      createBookWithAuthorAndRespondTo(newBook, author, res);
+    }
   });
-
 });
+
+function createBookWithAuthorAndRespondTo(book, author, res) {
+  // add this author to the book
+  book.author = author;
+  // save newBook to database
+  book.save(function(err, book){
+    if (err) {
+      return console.log("save error: " + err);
+    }
+    console.log("saved ", book.title);
+    // send back the book!
+    res.json(book);
+  });
+}
 
 // delete book
 app.delete('/api/books/:id', function (req, res) {
